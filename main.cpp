@@ -17,14 +17,26 @@ typedef struct cam{
   vec3d acc;
   vec3d vel;
   vec3d pos;
+  vec3d rot_acc;
+  vec3d rot_vel;
+  vec3d rot_pos;
 }Cam;
 
-Cam cam = {{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f}};
+Cam cam = {{0.0f,0.0f,0.0f},
+          {0.0f,0.0f,0.0f},
+          {0.0f,0.0f,0.0f},
+          {0.0f,0.0f,0.0f},
+          {0.0f,0.0f,0.0f},
+          {0.0f,0.0f,0.0f}};
 
 void camDynamics(float friction){
   cam.vel = Vector_Mul(cam.vel, friction);
   cam.vel = Vector_Add(cam.vel, cam.acc);
   cam.pos = Vector_Add(cam.pos, cam.vel);
+
+  //cam.rot_vel = Vector_Mul(cam.rot_vel, friction);
+  cam.rot_vel = Vector_Add(cam.rot_vel, cam.rot_acc);
+  cam.rot_pos = Vector_Add(cam.rot_pos, cam.rot_vel);
 }
 
 void lockFPS(){
@@ -115,15 +127,31 @@ bool OnUserUpdate(float deltaTime)
   
   vec3d vUp = {0,1,0};
   vec3d vTarget = {0,0,1};
-  mat4x4 matCamera = Matrix_MakeRotationY(1.0f* fTheta);
+  //mat4x4 matCamera = Matrix_MakeRotationY(1.0f* fTheta);
+
+  mat4x4 matCamera;
+  mat4x4 camRotX, camRotY, camRotZ;
+  
+  matCamera = Matrix_MakeIdentity();
+
+  //camRotX = Matrix_MakeRotationX(cam.rot_pos.x);
+  //camRotY = Matrix_MakeRotationY(cam.rot_pos.y);
+  camRotY = Matrix_MakeRotationY(fTheta * 0.5f);
+  //camRotZ = Matrix_MakeRotationZ(cam.rot_pos.z);
+
+  matCamera = Matrix_MultiplyMatrix(matCamera,camRotX);
+  matCamera = Matrix_MultiplyMatrix(matCamera,camRotY);
+  matCamera = Matrix_MultiplyMatrix(matCamera,camRotZ);
+
   vLookDir = Matrix_MultiplyVector(matCamera,vTarget);
   vTarget = Vector_Add(vCamera,vLookDir);
   matCamera = Matrix_PointAt(cam.pos, vTarget, vUp);
 
-
   matRotZ = Matrix_MakeRotationZ(fTheta * 0.5f);
   matRotX = Matrix_MakeRotationX(fTheta);
   matRotY = Matrix_MakeRotationY(fTheta);
+
+
   matTrans = Matrix_MakeTranslation(0.0f+cam.pos.x, 0.0f, 5.0f-cam.pos.z);
   matTrans2 = Matrix_MakeTranslation(-0.5f, -0.5f, -0.5f);
 
@@ -240,7 +268,6 @@ int main()
                   }
                     if (event.type == SDL_KEYDOWN){
                         if (event.key.keysym.sym == SDLK_w){
-                          printf("Key Pressed\n");
                           cam.acc.z = 0.005;
                         }
                         if (event.key.keysym.sym == SDLK_s){
@@ -252,9 +279,20 @@ int main()
                         if (event.key.keysym.sym == SDLK_d){
                           cam.acc.x = -0.005;
                         }
+                        if (event.key.keysym.sym == SDLK_UP){
+                          cam.rot_acc.x = 0.005;
+                        }
+                        if (event.key.keysym.sym == SDLK_DOWN){
+                          cam.rot_acc.x = -0.005;
+                        }
+                        if (event.key.keysym.sym == SDLK_LEFT){
+                          cam.rot_acc.z = 0.005;
+                        }
+                        if (event.key.keysym.sym == SDLK_RIGHT){
+                          cam.rot_acc.z = -0.005;
+                        }
                     }
                     if (event.type == SDL_KEYUP){
-                        printf("Key up");
                         if (event.key.keysym.sym == SDLK_w){
                           if (cam.acc.z > 0)
                             cam.acc.z = 0;
@@ -270,6 +308,18 @@ int main()
                         if (event.key.keysym.sym == SDLK_d){
                           if (cam.acc.x < 0)
                             cam.acc.x = 0;
+                        }
+                        if (event.key.keysym.sym == SDLK_UP){
+                          cam.rot_acc.x = 0.005;
+                        }
+                        if (event.key.keysym.sym == SDLK_DOWN){
+                          cam.rot_acc.x = -0.005;
+                        }
+                        if (event.key.keysym.sym == SDLK_LEFT){
+                          cam.rot_acc.z = 0.005;
+                        }
+                        if (event.key.keysym.sym == SDLK_RIGHT){
+                          cam.rot_acc.z = -0.005;
                         }
                     }
 

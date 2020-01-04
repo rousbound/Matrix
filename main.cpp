@@ -2,6 +2,7 @@
 //#include <fstream>
 //#include <strstream>
 //#include <algorithm>
+#include <algorithm>
 #include "FPSlock.h"
 
 #include "matrix.h"
@@ -11,6 +12,20 @@ SDL_Renderer * renderer = NULL;
 
 int WINW = 500;
 int WINH = 500;
+
+typedef struct cam{
+  vec3d acc;
+  vec3d vel;
+  vec3d pos;
+}Cam;
+
+Cam cam = {{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f}};
+
+void camDynamics(float friction){
+  cam.vel = Vector_Mul(cam.vel, friction);
+  cam.vel = Vector_Add(cam.vel, cam.acc);
+  cam.pos = Vector_Add(cam.pos, cam.vel);
+}
 
 void lockFPS(){
     frameTime = SDL_GetTicks() - frameStart;
@@ -33,6 +48,9 @@ void DrawTriangle(SDL_Renderer* irenderer,int x1, int y1, int x2, int y2, int x3
 
   mesh meshCube;
   mat4x4 matProj;
+  vec3d vCamera;
+  vec3d vLookDir;
+  float fYaw;
 
   float fTheta;
 
@@ -76,6 +94,7 @@ bool OnUserCreate()
   float fFovRad = 1.0f / tanf(fFov * 0.5f / 180.0f * 3.14159f);
 
   matProj = Matrix_MakeProjection(fFov, fAspectRatio, fNear, fFar);
+  
 
   return true;
 }
@@ -85,14 +104,27 @@ bool OnUserUpdate(float deltaTime)
   mat4x4 matRotZ, matRotX, matRotY;
   mat4x4 matTrans, matTrans2;
   fTheta += 1.0f * deltaTime;
+  camDynamics(0.98f);
+  printf("------------------------------------------------------\n");
+  printf("POS: X:,%f,Y:%f,Z:%f\n",cam.pos.x,cam.pos.y,cam.pos.z); 
+  printf("ACC: X:,%f,Y:%f,Z:%f\n",cam.acc.x,cam.acc.y,cam.acc.z); 
+  printf("VEL: X:,%f,Y:%f,Z:%f\n",cam.vel.x,cam.vel.y,cam.vel.z); 
+  printf("------------------------------------------------------\n");
 
   mat4x4 matWorld;
+  
+  vec3d vUp = {0,1,0};
+  vec3d vTarget = {0,0,1};
+  mat4x4 matCamera = Matrix_MakeIdentity();
+  vLookDir = Matrix_MultiplyVector(matCamera,vTarget);
+  vTarget = Vector_Add(vCamera,vLookDir);
+  matCamera = Matrix_PointAt(cam.pos, vTarget, vUp);
 
 
   matRotZ = Matrix_MakeRotationZ(fTheta * 0.5f);
   matRotX = Matrix_MakeRotationX(fTheta);
   matRotY = Matrix_MakeRotationY(fTheta);
-  matTrans = Matrix_MakeTranslation(0.0f, 0.0f, 5.0f);
+  matTrans = Matrix_MakeTranslation(0.0f+cam.pos.x, 0.0f, 5.0f-cam.pos.z);
   matTrans2 = Matrix_MakeTranslation(-0.5f, -0.5f, -0.5f);
 
   
@@ -103,6 +135,7 @@ bool OnUserUpdate(float deltaTime)
   matWorld = Matrix_MultiplyMatrix(matWorld, matRotZ);
   matWorld = Matrix_MultiplyMatrix(matWorld, matTrans);
   
+  vector<triangle> vecTrianglesToRaster;
 
   // Draw Triangles
   for (auto tri : meshCube.tris)
@@ -113,10 +146,25 @@ bool OnUserUpdate(float deltaTime)
     triTransformed.p[1] = Matrix_MultiplyVector(matWorld, tri.p[1]);
     triTransformed.p[2] = Matrix_MultiplyVector(matWorld, tri.p[2]);
 
+
+    vec3d normal, line1, line2;
+
+    line1 = Vector_Sub(triTransformed.p[1], triTransformed.p[0]);
+    line2 = Vector_Sub(triTransformed.p[2], triTransformed.p[0]);
+
+    normal = Vector_CrossProduct(line1, line2);
+
+    normal = Vector_Normalise(normal);
+    
+    vec3d vCameraRay = Vector_Sub(triTransformed.p[0], vCamera);
+
+    if (Vector_DotProduct(normal, vCameraRay) < 0.0f) {
+
     // Project triangles from 3D --> 2D
     triProjected.p[0] = Matrix_MultiplyVector(matProj, triTransformed.p[0]);
     triProjected.p[1] = Matrix_MultiplyVector(matProj, triTransformed.p[1]);
     triProjected.p[2] = Matrix_MultiplyVector(matProj, triTransformed.p[2]);
+
 
     // Scale into view
     triProjected.p[0].x += 1.0f; triProjected.p[0].y += 1.0f;
@@ -129,13 +177,29 @@ bool OnUserUpdate(float deltaTime)
     triProjected.p[2].x *= 0.5f * (float)WINW;
     triProjected.p[2].y *= 0.5f * (float)WINH;
 
-    // Rasterize triangle
-    DrawTriangle(renderer,triProjected.p[0].x, triProjected.p[0].y,
-      triProjected.p[1].x, triProjected.p[1].y,
-      triProjected.p[2].x, triProjected.p[2].y);
+    vecTrianglesToRaster.push_back(triProjected);
+
+    
+    }
+
+  sort(vecTrianglesToRaster.begin(), vecTrianglesToRaster.end(), [](triangle &t1, triangle &t2)
+    {
+      float z1 = (t1.p[0].z + t1.p[1].z + t1.p[2].z) / 3.0f;
+      float z2 = (t2.p[0].z + t2.p[1].z + t2.p[2].z) / 3.0f;
+      return z1 > z2;
+    });
+  
+  for (auto &triProjected : vecTrianglesToRaster)
+    {
+        DrawTriangle(renderer,triProjected.p[0].x, triProjected.p[0].y,
+        triProjected.p[1].x, triProjected.p[1].y,
+        triProjected.p[2].x, triProjected.p[2].y);
+  
+    }
 
   }
-
+  
+  
 
   return true;
 }
@@ -155,7 +219,6 @@ int main()
             SDL_Event event;
             while (!done) {
               frameStart = SDL_GetTicks();
-              printf("Running!\n");
               SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
               SDL_RenderClear(renderer);
               SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
@@ -166,6 +229,40 @@ int main()
                   if (event.type == SDL_QUIT) {
                       done = SDL_TRUE;
                   }
+                    if (event.type == SDL_KEYDOWN){
+                        if (event.key.keysym.sym == SDLK_w){
+                          printf("Key Pressed\n");
+                          cam.acc.z = 0.005;
+                        }
+                        if (event.key.keysym.sym == SDLK_s){
+                          cam.acc.z = -0.005;
+                        }
+                        if (event.key.keysym.sym == SDLK_a){
+                          cam.acc.x = 0.005;
+                        }
+                        if (event.key.keysym.sym == SDLK_d){
+                          cam.acc.x = -0.005;
+                        }
+                    }
+                    if (event.type == SDL_KEYUP){
+                        printf("Key up");
+                        if (event.key.keysym.sym == SDLK_w){
+                          if (cam.acc.z > 0)
+                            cam.acc.z = 0;
+                        }
+                        if (event.key.keysym.sym == SDLK_s){
+                          if (cam.acc.z < 0)
+                            cam.acc.z = 0;
+                        }
+                        if (event.key.keysym.sym == SDLK_a){
+                          if (cam.acc.x > 0)
+                            cam.acc.x = 0;
+                        }
+                        if (event.key.keysym.sym == SDLK_d){
+                          if (cam.acc.x < 0)
+                            cam.acc.x = 0;
+                        }
+                    }
 
                 }
               lockFPS();

@@ -51,4 +51,15 @@ vec3d Vector_Sub(vec3d &v1, vec3d &v2);
 vec3d Vector_Mul(vec3d &v1, float k);
 
 vec3d Vector_Div(vec3d &v1, float k);
+
+float Vector_Length(vec3d &v);
+
+vec3d Vector_Normalise(vec3d &v);
+
+vec3d Vector_CrossProduct(vec3d &v1, vec3d &v2);
+
+float Vector_DotProduct(vec3d &v1, vec3d &v2);
+
+mat4x4 Matrix_PointAt(vec3d &pos, vec3d &target, vec3d &up);
+
 #endif

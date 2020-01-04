@@ -115,7 +115,7 @@ bool OnUserUpdate(float deltaTime)
   
   vec3d vUp = {0,1,0};
   vec3d vTarget = {0,0,1};
-  mat4x4 matCamera = Matrix_MakeIdentity();
+  mat4x4 matCamera = Matrix_MakeRotationY(1.0f* fTheta);
   vLookDir = Matrix_MultiplyVector(matCamera,vTarget);
   vTarget = Vector_Add(vCamera,vLookDir);
   matCamera = Matrix_PointAt(cam.pos, vTarget, vUp);
@@ -134,13 +134,16 @@ bool OnUserUpdate(float deltaTime)
   matWorld = Matrix_MultiplyMatrix(matWorld, matRotY);
   matWorld = Matrix_MultiplyMatrix(matWorld, matRotZ);
   matWorld = Matrix_MultiplyMatrix(matWorld, matTrans);
+
+
+  mat4x4 matView = Matrix_QuickInverse(matCamera);
   
   vector<triangle> vecTrianglesToRaster;
 
   // Draw Triangles
   for (auto tri : meshCube.tris)
   {
-    triangle triProjected, triTranslated, triTransformed;
+    triangle triProjected, triTranslated, triTransformed, triViewed;
 
     triTransformed.p[0] = Matrix_MultiplyVector(matWorld, tri.p[0]);
     triTransformed.p[1] = Matrix_MultiplyVector(matWorld, tri.p[1]);
@@ -160,10 +163,15 @@ bool OnUserUpdate(float deltaTime)
 
     if (Vector_DotProduct(normal, vCameraRay) < 0.0f) {
 
+
+    triViewed.p[0] = Matrix_MultiplyVector(matView, triTransformed.p[0]);
+    triViewed.p[1] = Matrix_MultiplyVector(matView, triTransformed.p[1]);
+    triViewed.p[2] = Matrix_MultiplyVector(matView, triTransformed.p[2]);
+
     // Project triangles from 3D --> 2D
-    triProjected.p[0] = Matrix_MultiplyVector(matProj, triTransformed.p[0]);
-    triProjected.p[1] = Matrix_MultiplyVector(matProj, triTransformed.p[1]);
-    triProjected.p[2] = Matrix_MultiplyVector(matProj, triTransformed.p[2]);
+    triProjected.p[0] = Matrix_MultiplyVector(matProj, triViewed.p[0]);
+    triProjected.p[1] = Matrix_MultiplyVector(matProj, triViewed.p[1]);
+    triProjected.p[2] = Matrix_MultiplyVector(matProj, triViewed.p[2]);
 
 
     // Scale into view
@@ -222,7 +230,8 @@ int main()
               SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
               SDL_RenderClear(renderer);
               SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-              OnUserUpdate(0.025f);
+              //OnUserUpdate(0.025f);
+              OnUserUpdate(0.0125f);
               SDL_RenderPresent(renderer);
 
               while (SDL_PollEvent(&event)) {

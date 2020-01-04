@@ -1,0 +1,1 @@
+g++ -W main.cpp matrix.cpp -lSDL2 && ./a.out

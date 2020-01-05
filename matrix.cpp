@@ -1,4 +1,4 @@
-#include "matrix.h"
+#include "matrixTest.h"
 
 vec3d Matrix_MultiplyVector(mat4x4 &m, vec3d &i)
   {
@@ -18,8 +18,6 @@ m.m[3][2];
     }
     return o;
   }
-
-
 
 mat4x4 Matrix_MakeRotationX(float fAngleRad)
   {

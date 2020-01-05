@@ -5,7 +5,7 @@
 #include <algorithm>
 #include "FPSlock.h"
 
-#include "matrix.h"
+#include "matrixTest.h"
 
 using namespace std;
 SDL_Renderer * renderer = NULL;

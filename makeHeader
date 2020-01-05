@@ -1,0 +1,24 @@
+#!/bin/bash
+
+FILE="$(cat $1)"
+#echo "${FILE}"
+NEWFILE=""
+for item in "${FILE}"
+do
+  if [ "${item}" == "//EOF" ]; then
+    break
+  else
+    NEWFILE="${NEWFILE}${item}" 
+    
+  fi
+done
+echo "${NEWFILE}"
+RADICAL="$(echo ${1} | rev | cut -c 3- | rev)"
+
+FUNC="$(sed ':again;$!N;$!b again; :b; s/{[^{}]*}//g; t b' ${RADICAL}.cpp | sed 's/)/);/g' | tail -n +2)"
+
+echo "${NEWFILE}" > ${1}
+echo "${FUNC}" >> ${1}
+echo "#endif" >> ${1}
+
+

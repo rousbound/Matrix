@@ -8,13 +8,47 @@
 #include "matrix.h"
 #include "camera.h"
 
+
+
+
+
 extern Cam camera;
 
 using namespace std;
 SDL_Renderer * renderer = NULL;
+SDL_Window   *   window = NULL;
 
 int WINW = 500;
 int WINH = 500;
+
+typedef struct mouse{
+  int x;
+  int y;
+} Mouse;
+
+Mouse cursor = {WINW/2, WINH/2};
+
+void handleMouse(){
+  int oldx = cursor.x;
+  int oldy = cursor.y;
+  SDL_GetGlobalMouseState(&cursor.x,&cursor.y);
+  printf("MOUSE POS X:%d, Y:%d\n",cursor.x,cursor.y);
+  int deltax = cursor.x - oldx;
+  int deltay = cursor.y - oldy;
+  printf("MOUSE DELTA X:%d, Y:%d\n",deltax,deltay);
+  if(deltay > 0)
+    camera.rot_acc.x = -camera.impulse;
+  else if(deltay < 0)
+    camera.rot_acc.x = camera.impulse;
+  else
+    camera.rot_acc.x = 0;
+    if(deltax > 0)
+    camera.rot_acc.y = -camera.impulse;
+  else if(deltax < 0)
+    camera.rot_acc.y = camera.impulse;
+  else
+    camera.rot_acc.y = 0;
+}
 
 void lockFPS(){
     frameTime = SDL_GetTicks() - frameStart;
@@ -213,16 +247,84 @@ bool OnUserUpdate(float deltaTime)
   return true;
 }
 
+void handleKeyboard(SDL_Event event){
+
+    if (event.type == SDL_KEYDOWN){
+      if (event.key.keysym.sym == SDLK_w){
+        camera.acc.z = camera.impulse;
+      }
+      if (event.key.keysym.sym == SDLK_s){
+        camera.acc.z = -camera.impulse;
+      }
+      if (event.key.keysym.sym == SDLK_a){
+        camera.acc.x = camera.impulse;
+      }
+      if (event.key.keysym.sym == SDLK_d){
+        camera.acc.x = -camera.impulse;
+      }
+     /* if (event.key.keysym.sym == SDLK_UP){
+        camera.rot_acc.x = camera.impulse;
+      }
+      if (event.key.keysym.sym == SDLK_DOWN){
+        camera.rot_acc.x = -camera.impulse;
+      }
+      if (event.key.keysym.sym == SDLK_LEFT){
+        camera.rot_acc.y = camera.impulse;
+      }
+      if (event.key.keysym.sym == SDLK_RIGHT){
+        camera.rot_acc.y = -camera.impulse;
+      }*/
+  }
+  if (event.type == SDL_KEYUP){
+      if (event.key.keysym.sym == SDLK_w){
+        if (camera.acc.z > 0)
+          camera.acc.z = 0;
+      }
+      if (event.key.keysym.sym == SDLK_s){
+        if (camera.acc.z < 0)
+          camera.acc.z = 0;
+      }
+      if (event.key.keysym.sym == SDLK_a){
+        if (camera.acc.x > 0)
+          camera.acc.x = 0;
+      }
+      if (event.key.keysym.sym == SDLK_d){
+        if (camera.acc.x < 0)
+          camera.acc.x = 0;
+      }
+      /*if (event.key.keysym.sym == SDLK_UP){
+        if (camera.rot_acc.x > 0)
+          camera.rot_acc.x = 0;
+        camera.rot_acc.x = 0;
+      }
+      if (event.key.keysym.sym == SDLK_DOWN){
+        if (camera.rot_acc.x < 0)
+          camera.rot_acc.x = 0;
+        camera.rot_acc.x = 0;
+      }
+      if (event.key.keysym.sym == SDLK_LEFT){
+        if (camera.rot_acc.y > 0)
+          camera.rot_acc.y = 0;
+        camera.rot_acc.y = 0;
+      }
+      if (event.key.keysym.sym == SDLK_RIGHT){
+        if (camera.rot_acc.y < 0)
+          camera.rot_acc.y = 0;
+        camera.rot_acc.y = 0;
+      }*/
+  }
+}
+
 
 
 int main()
 {
   if (SDL_Init(SDL_INIT_VIDEO) == 0) {
-        SDL_Window* window = NULL;
 
         if (SDL_CreateWindowAndRenderer(WINW, WINH, 0, &window
   , &renderer) == 0) {
             SDL_bool done = SDL_FALSE;
+            SDL_SetRelativeMouseMode(SDL_TRUE);
             OnUserCreate();
 
             SDL_Event event;
@@ -238,73 +340,11 @@ int main()
                   if (event.type == SDL_QUIT) {
                       done = SDL_TRUE;
                   }
-                    if (event.type == SDL_KEYDOWN){
-                        if (event.key.keysym.sym == SDLK_w){
-                          camera.acc.z = camera.impulse;
-                        }
-                        if (event.key.keysym.sym == SDLK_s){
-                          camera.acc.z = -camera.impulse;
-                        }
-                        if (event.key.keysym.sym == SDLK_a){
-                          camera.acc.x = camera.impulse;
-                        }
-                        if (event.key.keysym.sym == SDLK_d){
-                          camera.acc.x = -camera.impulse;
-                        }
-                        if (event.key.keysym.sym == SDLK_UP){
-                          camera.rot_acc.x = camera.impulse;
-                        }
-                        if (event.key.keysym.sym == SDLK_DOWN){
-                          camera.rot_acc.x = -camera.impulse;
-                        }
-                        if (event.key.keysym.sym == SDLK_LEFT){
-                          camera.rot_acc.y = camera.impulse;
-                        }
-                        if (event.key.keysym.sym == SDLK_RIGHT){
-                          camera.rot_acc.y = -camera.impulse;
-                        }
-                    }
-                    if (event.type == SDL_KEYUP){
-                        if (event.key.keysym.sym == SDLK_w){
-                          if (camera.acc.z > 0)
-                            camera.acc.z = 0;
-                        }
-                        if (event.key.keysym.sym == SDLK_s){
-                          if (camera.acc.z < 0)
-                            camera.acc.z = 0;
-                        }
-                        if (event.key.keysym.sym == SDLK_a){
-                          if (camera.acc.x > 0)
-                            camera.acc.x = 0;
-                        }
-                        if (event.key.keysym.sym == SDLK_d){
-                          if (camera.acc.x < 0)
-                            camera.acc.x = 0;
-                        }
-                        if (event.key.keysym.sym == SDLK_UP){
-                          if (camera.rot_acc.x > 0)
-                            camera.rot_acc.x = 0;
-                          camera.rot_acc.x = 0;
-                        }
-                        if (event.key.keysym.sym == SDLK_DOWN){
-                          if (camera.rot_acc.x < 0)
-                            camera.rot_acc.x = 0;
-                          camera.rot_acc.x = 0;
-                        }
-                        if (event.key.keysym.sym == SDLK_LEFT){
-                          if (camera.rot_acc.y > 0)
-                            camera.rot_acc.y = 0;
-                          camera.rot_acc.y = 0;
-                        }
-                        if (event.key.keysym.sym == SDLK_RIGHT){
-                          if (camera.rot_acc.y < 0)
-                            camera.rot_acc.y = 0;
-                          camera.rot_acc.y = 0;
-                        }
-                    }
+                      handleKeyboard(event);
 
                 }
               lockFPS();
+              handleMouse();
             }
 
             if (renderer) {

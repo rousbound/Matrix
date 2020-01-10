@@ -1,13 +1,14 @@
 #include "camera.h"
 #include <stdio.h>
 
+
 Cam camera = {{0.0f,0.0f,0.0f},
 {0.0f,0.0f,0.0f},
 {0.0f,0.0f,0.0f},
 {0.0f,0.0f,0.0f},
 {0.0f,0.0f,0.0f},
 {0.0f,0.0f,0.0f},
-0.005f, 0.95f};
+0.0025f, 0.95f};
 
 void cameraDynamics(){
   

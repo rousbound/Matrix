@@ -1,4 +1,4 @@
-#include "matrixTest.h"
+#include "matrix.h"
 
 vec3d Matrix_MultiplyVector(mat4x4 &m, vec3d &i)
   {

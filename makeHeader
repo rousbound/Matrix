@@ -19,6 +19,6 @@ FUNC="$(sed ':again;$!N;$!b again; :b; s/{[^{}]*}//g; t b' ${RADICAL}.cpp | sed 
 
 echo "${NEWFILE}" > ${1}
 echo "${FUNC}" >> ${1}
-echo "#endif" >> ${1}
+#echo "#endif" >> ${1}
 
 

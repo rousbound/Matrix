@@ -1,6 +1,7 @@
 #!/bin/bash
-$(./makeHeader matrix.h)
-g++ -W main.cpp matrix.cpp -lSDL2 2>&1 | smartCppDebug
+./makeHeader matrix.h
+#./makeHeader camera.h
+g++ -W main.cpp matrix.cpp camera.cpp -lSDL2 2>&1 | smartCppDebug
 
 
 

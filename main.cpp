@@ -6,42 +6,15 @@
 #include "FPSlock.h"
 
 #include "matrix.h"
+#include "camera.h"
+
+extern Cam camera;
 
 using namespace std;
 SDL_Renderer * renderer = NULL;
 
 int WINW = 500;
 int WINH = 500;
-
-typedef struct cam{
-  vec3d acc;
-  vec3d vel;
-  vec3d pos;
-  vec3d rot_acc;
-  vec3d rot_vel;
-  vec3d rot_pos;
-  float impulse;
-  float friction;
-}Cam;
-
-Cam cam = {{0.0f,0.0f,0.0f},
-          {0.0f,0.0f,0.0f},
-          {0.0f,0.0f,0.0f},
-          {0.0f,0.0f,0.0f},
-          {0.0f,0.0f,0.0f},
-          {0.0f,0.0f,0.0f},
-          0.005f, 0.95f};
-
-void camDynamics(){
-  
-  cam.vel = Vector_Mul(cam.vel, cam.friction);
-  cam.vel = Vector_Add(cam.vel, cam.acc);
-  cam.pos = Vector_Add(cam.pos, cam.vel);
-
-  cam.rot_vel = Vector_Mul(cam.rot_vel, cam.friction);
-  cam.rot_vel = Vector_Add(cam.rot_vel, cam.rot_acc);
-  cam.rot_pos = Vector_Add(cam.rot_pos, cam.rot_vel);
-}
 
 void lockFPS(){
     frameTime = SDL_GetTicks() - frameStart;
@@ -115,22 +88,12 @@ bool OnUserCreate()
   return true;
 }
 
-void debugCamera(){
-  printf("------------------------------------------------------\n");
-  printf("POS: X:,%f,Y:%f,Z:%f\n",cam.pos.x,cam.pos.y,cam.pos.z); 
-  printf("ACC: X:,%f,Y:%f,Z:%f\n",cam.acc.x,cam.acc.y,cam.acc.z); 
-  printf("VEL: X:,%f,Y:%f,Z:%f\n",cam.vel.x,cam.vel.y,cam.vel.z); 
-  printf("ROT_POS: X:,%f,Y:%f,Z:%f\n",cam.rot_pos.x,cam.rot_pos.y,cam.rot_pos.z); 
-  printf("ROT_ACC: X:,%f,Y:%f,Z:%f\n",cam.rot_acc.x,cam.rot_acc.y,cam.rot_acc.z); 
-  printf("ROT_VEL: X:,%f,Y:%f,Z:%f\n",cam.rot_vel.x,cam.rot_vel.y,cam.rot_vel.z); 
-  printf("------------------------------------------------------\n");
-}
 bool OnUserUpdate(float deltaTime)
 {
   mat4x4 matRotZ, matRotX, matRotY;
   mat4x4 matTrans, matTrans2;
   fTheta += 1.0f * deltaTime;
-  camDynamics();
+  cameraDynamics();
   debugCamera();
 
   mat4x4 matWorld;
@@ -140,29 +103,29 @@ bool OnUserUpdate(float deltaTime)
   //mat4x4 matCamera = Matrix_MakeRotationY(1.0f* fTheta);
 
   mat4x4 matCamera;
-  mat4x4 camRotX, camRotY, camRotZ;
+  mat4x4 cameraRotX, cameraRotY, cameraRotZ;
   
   matCamera = Matrix_MakeIdentity();
 
-  camRotX = Matrix_MakeRotationX(cam.rot_pos.x);
-  camRotY = Matrix_MakeRotationY(cam.rot_pos.y);
-  camRotZ = Matrix_MakeRotationZ(cam.rot_pos.z);
+  cameraRotX = Matrix_MakeRotationX(camera.rot_pos.x);
+  cameraRotY = Matrix_MakeRotationY(camera.rot_pos.y);
+  cameraRotZ = Matrix_MakeRotationZ(camera.rot_pos.z);
 
 
   vLookDir = Matrix_MultiplyVector(matCamera,vTarget);
   vTarget = Vector_Add(vCamera,vLookDir);
-  matCamera = Matrix_PointAt(cam.pos, vTarget, vUp);
+  matCamera = Matrix_PointAt(camera.pos, vTarget, vUp);
 
-  matCamera = Matrix_MultiplyMatrix(matCamera,camRotX);
-  matCamera = Matrix_MultiplyMatrix(matCamera,camRotY);
-  matCamera = Matrix_MultiplyMatrix(matCamera,camRotZ);
+  matCamera = Matrix_MultiplyMatrix(matCamera,cameraRotX);
+  matCamera = Matrix_MultiplyMatrix(matCamera,cameraRotY);
+  matCamera = Matrix_MultiplyMatrix(matCamera,cameraRotZ);
 
   matRotZ = Matrix_MakeRotationZ(fTheta * 0.5f);
   matRotX = Matrix_MakeRotationX(fTheta);
   matRotY = Matrix_MakeRotationY(fTheta);
 
 
-  matTrans = Matrix_MakeTranslation(0.0f+cam.pos.x, 0.0f, 5.0f-cam.pos.z);
+  matTrans = Matrix_MakeTranslation(0.0f+camera.pos.x, 0.0f, 5.0f-camera.pos.z);
   matTrans2 = Matrix_MakeTranslation(-0.5f, -0.5f, -0.5f);
 
   
@@ -277,66 +240,66 @@ int main()
                   }
                     if (event.type == SDL_KEYDOWN){
                         if (event.key.keysym.sym == SDLK_w){
-                          cam.acc.z = cam.impulse;
+                          camera.acc.z = camera.impulse;
                         }
                         if (event.key.keysym.sym == SDLK_s){
-                          cam.acc.z = -cam.impulse;
+                          camera.acc.z = -camera.impulse;
                         }
                         if (event.key.keysym.sym == SDLK_a){
-                          cam.acc.x = cam.impulse;
+                          camera.acc.x = camera.impulse;
                         }
                         if (event.key.keysym.sym == SDLK_d){
-                          cam.acc.x = -cam.impulse;
+                          camera.acc.x = -camera.impulse;
                         }
                         if (event.key.keysym.sym == SDLK_UP){
-                          cam.rot_acc.x = cam.impulse;
+                          camera.rot_acc.x = camera.impulse;
                         }
                         if (event.key.keysym.sym == SDLK_DOWN){
-                          cam.rot_acc.x = -cam.impulse;
+                          camera.rot_acc.x = -camera.impulse;
                         }
                         if (event.key.keysym.sym == SDLK_LEFT){
-                          cam.rot_acc.y = cam.impulse;
+                          camera.rot_acc.y = camera.impulse;
                         }
                         if (event.key.keysym.sym == SDLK_RIGHT){
-                          cam.rot_acc.y = -cam.impulse;
+                          camera.rot_acc.y = -camera.impulse;
                         }
                     }
                     if (event.type == SDL_KEYUP){
                         if (event.key.keysym.sym == SDLK_w){
-                          if (cam.acc.z > 0)
-                            cam.acc.z = 0;
+                          if (camera.acc.z > 0)
+                            camera.acc.z = 0;
                         }
                         if (event.key.keysym.sym == SDLK_s){
-                          if (cam.acc.z < 0)
-                            cam.acc.z = 0;
+                          if (camera.acc.z < 0)
+                            camera.acc.z = 0;
                         }
                         if (event.key.keysym.sym == SDLK_a){
-                          if (cam.acc.x > 0)
-                            cam.acc.x = 0;
+                          if (camera.acc.x > 0)
+                            camera.acc.x = 0;
                         }
                         if (event.key.keysym.sym == SDLK_d){
-                          if (cam.acc.x < 0)
-                            cam.acc.x = 0;
+                          if (camera.acc.x < 0)
+                            camera.acc.x = 0;
                         }
                         if (event.key.keysym.sym == SDLK_UP){
-                          if (cam.rot_acc.x > 0)
-                            cam.rot_acc.x = 0;
-                          cam.rot_acc.x = 0;
+                          if (camera.rot_acc.x > 0)
+                            camera.rot_acc.x = 0;
+                          camera.rot_acc.x = 0;
                         }
                         if (event.key.keysym.sym == SDLK_DOWN){
-                          if (cam.rot_acc.x < 0)
-                            cam.rot_acc.x = 0;
-                          cam.rot_acc.x = 0;
+                          if (camera.rot_acc.x < 0)
+                            camera.rot_acc.x = 0;
+                          camera.rot_acc.x = 0;
                         }
                         if (event.key.keysym.sym == SDLK_LEFT){
-                          if (cam.rot_acc.y > 0)
-                            cam.rot_acc.y = 0;
-                          cam.rot_acc.y = 0;
+                          if (camera.rot_acc.y > 0)
+                            camera.rot_acc.y = 0;
+                          camera.rot_acc.y = 0;
                         }
                         if (event.key.keysym.sym == SDLK_RIGHT){
-                          if (cam.rot_acc.y < 0)
-                            cam.rot_acc.y = 0;
-                          cam.rot_acc.y = 0;
+                          if (camera.rot_acc.y < 0)
+                            camera.rot_acc.y = 0;
+                          camera.rot_acc.y = 0;
                         }
                     }
 

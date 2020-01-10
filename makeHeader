@@ -1,24 +1,25 @@
 #!/bin/bash
-
-FILE="$(cat $1)"
-#echo "${FILE}"
+> temp.h
 NEWFILE=""
-for item in "${FILE}"
+cat $1 | while read item
 do
   if [ "${item}" == "//EOF" ]; then
+    echo "${item}" >> temp.h
     break
   else
-    NEWFILE="${NEWFILE}${item}" 
-    
+    echo "${item}" >> temp.h
   fi
 done
-echo "${NEWFILE}"
+
 RADICAL="$(echo ${1} | rev | cut -c 3- | rev)"
 
 FUNC="$(sed ':again;$!N;$!b again; :b; s/{[^{}]*}//g; t b' ${RADICAL}.cpp | sed 's/)/);/g' | tail -n +2)"
 
-echo "${NEWFILE}" > ${1}
-echo "${FUNC}" >> ${1}
-#echo "#endif" >> ${1}
+echo "${FUNC}" >> temp.h
+echo "#endif" >> temp.h
+
+cat temp.h > $1
+rm temp.h
+
 
 

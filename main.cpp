@@ -3,6 +3,7 @@
 //#include <strstream>
 //#include <algorithm>
 #include <algorithm>
+#include <stdlib.h>
 #include "FPSlock.h"
 
 #include "matrix.h"
@@ -28,26 +29,27 @@ typedef struct mouse{
 
 Mouse cursor = {WINW/2, WINH/2};
 
-void handleMouse(){
-  int oldx = cursor.x;
-  int oldy = cursor.y;
-  SDL_GetGlobalMouseState(&cursor.x,&cursor.y);
-  printf("MOUSE POS X:%d, Y:%d\n",cursor.x,cursor.y);
-  int deltax = cursor.x - oldx;
-  int deltay = cursor.y - oldy;
-  printf("MOUSE DELTA X:%d, Y:%d\n",deltax,deltay);
-  if(deltay > 0)
-    camera.rot_acc.x = -camera.impulse;
-  else if(deltay < 0)
-    camera.rot_acc.x = camera.impulse;
-  else
-    camera.rot_acc.x = 0;
-    if(deltax > 0)
-    camera.rot_acc.y = -camera.impulse;
-  else if(deltax < 0)
-    camera.rot_acc.y = camera.impulse;
-  else
-    camera.rot_acc.y = 0;
+void handleMouse(int * deltax, int * deltay){
+    /*SDL_ShowCursor(SDL_DISABLE); 
+    SDL_GetMouseState(&cursor.x,&cursor.y);
+    SDL_WarpMouseInWindow(window, WINW/2, WINH/2);*/
+    printf("MOUSE POS X:%d, Y:%d\n",cursor.x,cursor.y);
+    printf("MOUSE DELTA X:%d, Y:%d\n",*deltax,*deltay);
+    if(*deltay > 0)
+      camera.rot_acc.x = -camera.impulse;
+    else if(*deltay < 0)
+      camera.rot_acc.x = camera.impulse;
+    else
+      camera.rot_acc.x = 0;
+      if(*deltax > 0)
+      camera.rot_acc.y = -camera.impulse;
+    else if(*deltax < 0)
+      camera.rot_acc.y = camera.impulse;
+    else
+      camera.rot_acc.y = 0;
+    *deltax = 0;
+    *deltay = 0;
+    
 }
 
 void lockFPS(){
@@ -128,7 +130,7 @@ bool OnUserUpdate(float deltaTime)
   mat4x4 matTrans, matTrans2;
   fTheta += 1.0f * deltaTime;
   cameraDynamics();
-  debugCamera();
+  //debugCamera();
 
   mat4x4 matWorld;
   
@@ -326,8 +328,8 @@ int main()
             SDL_bool done = SDL_FALSE;
             SDL_SetRelativeMouseMode(SDL_TRUE);
             OnUserCreate();
-
-            SDL_Event event;
+            int deltax = 0;
+            int deltay = 0;
             while (!done) {
               frameStart = SDL_GetTicks();
               SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
@@ -336,15 +338,23 @@ int main()
               OnUserUpdate(0.0125f);
               SDL_RenderPresent(renderer);
 
+
+
+
+              SDL_Event event;
               while (SDL_PollEvent(&event)) {
                   if (event.type == SDL_QUIT) {
                       done = SDL_TRUE;
                   }
-                      handleKeyboard(event);
+                  else if (event.type == SDL_MOUSEMOTION){
+                    deltax = event.motion.xrel; 
+                    deltay = event.motion.yrel;
+                  }
+                  handleKeyboard(event);
 
                 }
+              handleMouse(&deltax,&deltay);
               lockFPS();
-              handleMouse();
             }
 
             if (renderer) {

@@ -22,6 +22,8 @@ SDL_Window   *   window = NULL;
 int WINW = 500;
 int WINH = 500;
 
+float deltaTime = 0.0125f;
+
 typedef struct mouse{
   int x;
   int y;
@@ -30,9 +32,6 @@ typedef struct mouse{
 Mouse cursor = {WINW/2, WINH/2};
 
 void handleMouse(int * deltax, int * deltay){
-    /*SDL_ShowCursor(SDL_DISABLE); 
-    SDL_GetMouseState(&cursor.x,&cursor.y);
-    SDL_WarpMouseInWindow(window, WINW/2, WINH/2);*/
     printf("MOUSE POS X:%d, Y:%d\n",cursor.x,cursor.y);
     printf("MOUSE DELTA X:%d, Y:%d\n",*deltax,*deltay);
     if(*deltay > 0)
@@ -147,14 +146,14 @@ bool OnUserUpdate(float deltaTime)
   cameraRotY = Matrix_MakeRotationY(camera.rot_pos.y);
   cameraRotZ = Matrix_MakeRotationZ(camera.rot_pos.z);
 
-
-  vLookDir = Matrix_MultiplyVector(matCamera,vTarget);
-  vTarget = Vector_Add(vCamera,vLookDir);
-  matCamera = Matrix_PointAt(camera.pos, vTarget, vUp);
-
   matCamera = Matrix_MultiplyMatrix(matCamera,cameraRotX);
   matCamera = Matrix_MultiplyMatrix(matCamera,cameraRotY);
   matCamera = Matrix_MultiplyMatrix(matCamera,cameraRotZ);
+
+  vLookDir = Matrix_MultiplyVector(matCamera,vTarget);
+  vTarget = Vector_Add(camera.pos,vLookDir);
+  matCamera = Matrix_PointAt(camera.pos, vTarget, vUp);
+
 
   matRotZ = Matrix_MakeRotationZ(fTheta * 0.5f);
   matRotX = Matrix_MakeRotationX(fTheta);
@@ -335,7 +334,7 @@ int main()
               SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
               SDL_RenderClear(renderer);
               SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-              OnUserUpdate(0.0125f);
+              OnUserUpdate(deltaTime);
               SDL_RenderPresent(renderer);
 
 
